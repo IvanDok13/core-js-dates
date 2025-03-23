@@ -248,57 +248,31 @@ function getQuarter(date) {
  */
 
 function formDate(date) {
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
+  const [day, month, year] = date.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function getWorkSchedule(period, countWorkDays, countOffDays) {
-  // Input validation
-  if (
-    !period.start ||
-    !period.end ||
-    Number.isNaN(countWorkDays) ||
-    Number.isNaN(countOffDays)
-  ) {
-    throw new Error(
-      'Invalid input: Check period, countWorkDays, and countOffDays.'
-    );
-  }
-
-  // Parse input dates
-  const startPeriod = new Date(period.start.split('-').reverse().join('-'));
-  const endPeriod = new Date(period.end.split('-').reverse().join('-'));
-
-  if (startPeriod > endPeriod) {
-    throw new Error('Invalid period: Start date must be before end date.');
-  }
-
-  const RESULT = [];
-  const currentDate = new Date(startPeriod);
-
-  // Generate work schedule
-  while (currentDate <= endPeriod) {
-    // Check if the current date is within the valid range
-    if (currentDate >= startPeriod && currentDate <= endPeriod) {
-      // Add work days
-      for (let i = 0; i < countWorkDays && currentDate <= endPeriod; i += 1) {
-        RESULT.push(formDate(currentDate));
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-    } else {
-      // Skip to the next valid date
-      currentDate.setDate(currentDate.getDate() + 1);
+  const start = formDate(period.start);
+  const end = formDate(period.end);
+  const res = [];
+  while (start.getTime() <= end.getTime()) {
+    for (let i = 0; i < countWorkDays; i += 1) {
+      if (start.getTime() > end.getTime()) break;
+      const date =
+        start.getDate() < 10 ? `0${start.getDate()}` : start.getDate();
+      const month =
+        start.getMonth() + 1 < 10
+          ? `0${start.getMonth() + 1}`
+          : start.getMonth() + 1;
+      const year = start.getFullYear();
+      const full = `${date}-${month}-${year}`;
+      res.push(full);
+      start.setDate(start.getDate() + 1);
     }
-
-    // Skip days off
-    for (let i = 0; i < countOffDays && currentDate <= endPeriod; i += 1) {
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
+    start.setDate(start.getDate() + countOffDays);
   }
-
-  return RESULT;
+  return res;
 }
 
 /**
